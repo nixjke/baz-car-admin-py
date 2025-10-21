@@ -35,6 +35,8 @@ class Settings(BaseSettings):
         "https://www.baz-car.fun",  # HTTPS версия
         "http://baz-car.fun",  # Без www
         "https://baz-car.fun",  # HTTPS без www
+        "http://baz-car-server.online",  # Домен сервера
+        "https://baz-car-server.online",  # HTTPS версия сервера
     ]
     
     # Файловое хранилище
