@@ -25,18 +25,18 @@ class Settings(BaseSettings):
     
     # CORS настройки - исправлено для продакшена
     ALLOWED_HOSTS: List[str] = [
+        "http://baz-car-server.online",  # Домен сервера (ПРИОРИТЕТ)
+        "https://baz-car-server.online",  # HTTPS версия сервера
+        "http://www.baz-car.fun",  # Ваш домен админки
+        "https://www.baz-car.fun",  # HTTPS версия
+        "http://baz-car.fun",  # Без www
+        "https://baz-car.fun",  # HTTPS без www
         "http://localhost:5173", 
         "http://localhost:3000", 
         "http://127.0.0.1:5173", 
         "http://127.0.0.1:3000",
         "http://91.229.8.235:5173",  # IP сервера
         "http://91.229.8.235:3000",
-        "http://www.baz-car.fun",  # Ваш домен админки
-        "https://www.baz-car.fun",  # HTTPS версия
-        "http://baz-car.fun",  # Без www
-        "https://baz-car.fun",  # HTTPS без www
-        "http://baz-car-server.online",  # Домен сервера
-        "https://baz-car-server.online",  # HTTPS версия сервера
     ]
     
     # Файловое хранилище

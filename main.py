@@ -39,9 +39,17 @@ if os.path.exists("uploads"):
     app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # Настройка CORS
+# Добавляем домен baz-car-server.online программно
+cors_origins = settings.ALLOWED_HOSTS.copy()
+if "http://baz-car-server.online" not in cors_origins:
+    cors_origins.extend([
+        "http://baz-car-server.online",
+        "https://baz-car-server.online"
+    ])
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_HOSTS,
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
