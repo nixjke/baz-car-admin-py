@@ -12,10 +12,47 @@ if [ -f "server.pid" ]; then
     OLD_PID=$(cat server.pid)
     if ps -p $OLD_PID > /dev/null 2>&1; then
         echo "🛑 Останавливаем старый сервер (PID: $OLD_PID)..."
-        kill $OLD_PID
+        kill $OLD_PID 2>/dev/null || true
         sleep 2
+        if ps -p $OLD_PID > /dev/null 2>&1; then
+            echo "🛑 Принудительная остановка старого сервера (PID: $OLD_PID)..."
+            kill -9 $OLD_PID 2>/dev/null || true
+        fi
     fi
     rm -f server.pid
+fi
+
+# Освобождаем занятый порт (по умолчанию 8080 или из $PORT)
+PORT=${PORT:-8080}
+echo "🧹 Освобождение порта $PORT (если занят)..."
+if command -v lsof >/dev/null 2>&1; then
+  PIDS_ON_PORT=$(lsof -ti :$PORT || true)
+  if [ -n "$PIDS_ON_PORT" ]; then
+    echo "Найдены процессы на порту $PORT: $PIDS_ON_PORT"
+    kill $PIDS_ON_PORT 2>/dev/null || true
+    sleep 2
+    # Если ещё живы — SIGKILL
+    STILL=$(lsof -ti :$PORT || true)
+    if [ -n "$STILL" ]; then
+      echo "Принудительное освобождение порта $PORT: $STILL"
+      kill -9 $STILL 2>/dev/null || true
+    fi
+  fi
+elif command -v ss >/dev/null 2>&1; then
+  # Альтернатива через ss + awk (на некоторых системах)
+  PIDS_ON_PORT=$(ss -ltnp | grep ":$PORT " | awk '{print $NF}' | sed -n 's/.*pid=\([0-9]*\),.*/\1/p' | sort -u)
+  if [ -n "$PIDS_ON_PORT" ]; then
+    echo "Найдены процессы на порту $PORT: $PIDS_ON_PORT"
+    kill $PIDS_ON_PORT 2>/dev/null || true
+    sleep 2
+    for PID in $PIDS_ON_PORT; do
+      if ps -p $PID > /dev/null 2>&1; then
+        kill -9 $PID 2>/dev/null || true
+      fi
+    done
+  fi
+else
+  echo "⚠️  Ни lsof, ни ss не найдены — пропускаем освобождение порта"
 fi
 
 # Проверяем наличие Python3
@@ -78,10 +115,7 @@ echo "✅ Миграции выполнены успешно!"
 echo ""
 
 # Запускаем сервер
-echo "🚀 Запуск сервера на порту 8080..."
-
-# Определяем порт
-PORT=${PORT:-8080}
+echo "🚀 Запуск сервера на порту $PORT..."
 
 # Запускаем сервер в фоне
 nohup venv/bin/uvicorn main:app --host 0.0.0.0 --port $PORT --reload > server.log 2>&1 &
