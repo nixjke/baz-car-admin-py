@@ -1,7 +1,7 @@
 """
 API эндпоинты для автомобилей
 """
-from typing import List
+from typing import List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
 
@@ -32,6 +32,23 @@ async def get_cars(
     """Получение списка всех автомобилей"""
     cars = car_service.get_cars()
     return cars
+
+
+@router.get("/meta")
+async def get_cars_meta(
+    car_service: CarService = Depends(get_car_service)
+) -> Dict[str, Any]:
+    """Агрегированные данные для фильтров (типы топлива, диапазон цен)"""
+    return car_service.get_meta()
+
+
+@router.get("/popular", response_model=List[Car])
+async def get_popular_cars(
+    limit: int = 8,
+    car_service: CarService = Depends(get_car_service)
+):
+    """Популярные автомобили по рейтингу"""
+    return car_service.get_popular(limit=limit)
 
 
 @router.get("/{car_id}", response_model=Car)
@@ -196,3 +213,28 @@ async def cleanup_uploads(
     
     deleted_count = storage_service.delete_by_public_paths(paths)
     return CleanupResponse(deleted=deleted_count)
+
+
+@router.get("/{car_id}/services")
+async def get_car_services(
+    car_id: int,
+    car_service: CarService = Depends(get_car_service)
+) -> List[dict]:
+    """Получить активные дополнительные услуги, доступные для автомобиля"""
+    services = car_service.get_car_services(car_id)
+    # Возвращаем как словари для совместимости
+    return [
+        {
+            "id": s.id,
+            "service_id": s.service_id,
+            "label": s.label,
+            "description": s.description,
+            "fee": s.fee,
+            "fee_type": s.fee_type,
+            "icon_key": s.icon_key,
+            "is_active": s.is_active,
+            "created_at": s.created_at,
+            "updated_at": s.updated_at,
+        }
+        for s in services if s.is_active
+    ]

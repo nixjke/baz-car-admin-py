@@ -1,10 +1,11 @@
 """
 Сервис для работы с автомобилями
 """
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Tuple, Set
 from sqlalchemy.orm import Session
 
 from app.models.car import Car
+from app.models.additional_service import AdditionalService
 from app.schemas.car import CarCreate, CarUpdate
 
 
@@ -65,3 +66,43 @@ class CarService:
         self.db.commit()
         self.db.refresh(db_car)
         return db_car
+
+    def get_meta(self) -> Dict[str, Any]:
+        """Агрегированные данные: типы топлива и диапазон цен"""
+        cars: List[Car] = self.get_cars()
+        fuel_types: Set[str] = set()
+        prices: List[int] = []
+        for car in cars:
+            if car.fuel_type:
+                fuel_types.add(car.fuel_type)
+            if car.price is not None:
+                prices.append(int(car.price))
+
+        min_price: Optional[int] = min(prices) if prices else None
+        max_price: Optional[int] = max(prices) if prices else None
+        return {
+            "fuel_types": sorted(list(fuel_types)),
+            "min_price": min_price,
+            "max_price": max_price,
+        }
+
+    def get_popular(self, limit: int = 8) -> List[Car]:
+        """Популярные автомобили по рейтингу"""
+        return (
+            self.db.query(Car)
+            .order_by(Car.rating.desc())
+            .limit(limit)
+            .all()
+        )
+
+    def get_car_services(self, car_id: int) -> List[AdditionalService]:
+        """Получить дополнительные услуги для автомобиля (по id из car.additional_services)"""
+        car = self.get_car_by_id(car_id)
+        if not car or not car.additional_services:
+            return []
+        service_ids: List[int] = [int(sid) for sid in car.additional_services]
+        return (
+            self.db.query(AdditionalService)
+            .filter(AdditionalService.id.in_(service_ids))
+            .all()
+        )

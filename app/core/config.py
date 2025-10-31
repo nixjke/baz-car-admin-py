@@ -31,9 +31,11 @@ class Settings(BaseSettings):
         "https://www.baz-car.fun",  # HTTPS версия
         "http://baz-car.fun",  # Без www
         "https://baz-car.fun",  # HTTPS без www
-        "http://localhost:5173", 
+        "http://localhost:5173",  # Админка
+        "http://localhost:5174",  # Основной фронт
         "http://localhost:3000", 
         "http://127.0.0.1:5173", 
+        "http://127.0.0.1:5174",  # Основной фронт
         "http://127.0.0.1:3000",
         "http://91.229.8.235:5173",  # IP сервера
         "http://91.229.8.235:3000",
